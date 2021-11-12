@@ -1,0 +1,14 @@
+FROM postgres:13-alpine
+
+ENV LANG en_US.UTF-8 \
+    LANGUAGE en_US.UTF-8 \
+    LC_ALL en_US.UTF-8 \
+    TZ Europe/Amsterdam
+
+RUN echo "Europe/Amsterdam" > /etc/timezone \
+ && cp /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
+
+COPY initdb.d /docker-entrypoint-initdb.d
+COPY config/postgresql.conf.sample.pgoutput /usr/local/share/postgresql/postgresql.conf.sample
+
+USER 70

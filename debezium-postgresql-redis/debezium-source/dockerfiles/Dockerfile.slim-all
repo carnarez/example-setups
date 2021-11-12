@@ -1,0 +1,56 @@
+FROM postgres:13 AS build
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PROTOBUFC_VERSION=1.3.* \
+    DECODERBUFS_VERSION=v1.7.1.Final \
+    WAL2JSON_VERSION=wal2json_2_3
+
+WORKDIR /usr/src
+
+RUN apt-get update \
+ && apt-get install --no-install-recommends -y software-properties-common \
+ && apt-add-repository "deb http://ftp.debian.org/debian testing main contrib" \
+ && apt-get update \
+ && apt-get install --no-install-recommends -y build-essential \
+                                               git \
+                                               pkg-config \
+                                               postgresql-server-dev-$PG_MAJOR \
+                                               libprotobuf-c-dev=$PROTOBUFC_VERSION
+
+RUN git clone https://github.com/debezium/postgres-decoderbufs -b $DECODERBUFS_VERSION --single-branch \
+ && cd postgres-decoderbufs \
+ && make \
+ && make install
+
+RUN git clone https://github.com/eulerto/wal2json -b $WAL2JSON_VERSION --single-branch \
+ && cd wal2json \
+ && make \
+ && make install
+
+
+FROM postgres:13
+
+RUN echo "Europe/Amsterdam" > /etc/timezone \
+ && rm /etc/localtime \
+ && dpkg-reconfigure -f noninteractive tzdata \
+ && apt-get update \
+ && apt-get install --no-install-recommends -y software-properties-common \
+ && apt-add-repository "deb http://ftp.debian.org/debian testing main contrib" \
+ && apt-get update \
+ && apt-get install --no-install-recommends -y libprotobuf-c1 \
+ && apt-get autoremove --allow-remove-essential -y software-properties-common \
+ && apt-get clean -y \
+ && rm -fr /tmp/* \
+           /var/cache/debconf/*-old \
+           /var/lib/apt \
+           /var/lib/cache \
+           /var/lib/dpkg \
+           /var/lib/log
+
+COPY initdb.d /docker-entrypoint-initdb.d
+COPY config/postgresql.conf.sample.plugins /usr/local/share/postgresql/postgresql.conf.sample
+
+COPY --from=build /usr/lib/postgresql/$PG_MAJOR/lib/decoderbufs.so /usr/lib/postgresql/$PG_MAJOR/lib/wal2json.so /usr/lib/postgresql/$PG_MAJOR/lib/
+COPY --from=build /usr/share/postgresql/$PG_MAJOR/extension/decoderbufs.control /usr/share/postgresql/$PG_MAJOR/extension/
+
+USER 999
