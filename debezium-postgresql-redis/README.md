@@ -1,6 +1,6 @@
-**[`Debezium`](https://debezium.io/) playground,
-[`PostgreSQL`](https://www.postgresql.org/) &
-[`Redis Streams`](https://redis.io/topics/streams-intro).** Following the quick schema:
+**[`Debezium`](https://debezium.io/), [`PostgreSQL`](https://www.postgresql.org/) &
+[`Redis Streams`](https://redis.io/topics/streams-intro) playground**, following the
+worklfow:
 
 ```text
  +----------+      +------------+      +----------+      +-------+      +----------+
