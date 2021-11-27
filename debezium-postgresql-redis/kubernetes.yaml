@@ -1,0 +1,205 @@
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbz-prod
+spec:
+  selector:
+    matchLabels:
+      app: dbz-prod
+  template:
+    metadata:
+      labels:
+        app: dbz-prod
+    spec:
+      containers:
+        - name: dbz-prod
+          image: dbz-prod:latest
+          imagePullPolicy: Never
+          env:
+            - name: POSTGRES_USER
+              value: "user"
+            - name: POSTGRES_PASSWORD
+              value: "S3cr3T"
+            - name: POSTGRES_HOST
+              value: "dbz-pgsql"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "data"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbz-pgsql
+spec:
+  selector:
+    matchLabels:
+      app: dbz-pgsql
+  template:
+    metadata:
+      labels:
+        app: dbz-pgsql
+    spec:
+      containers:
+        - name: dbz-pgsql
+          image: dbz-pgsql:latest
+          env:
+            - name: POSTGRES_USER
+              value: "user"
+            - name: POSTGRES_PASSWORD
+              value: "S3cr3T"
+            - name: POSTGRES_DB
+              value: "data"
+          ports:
+            - containerPort: 5432
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: dbz-pgsql
+spec:
+  selector:
+    app: dbz-pgsql
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbz-server
+spec:
+  selector:
+    matchLabels:
+      app: dbz-server
+  template:
+    metadata:
+      labels:
+        app: dbz-server
+    spec:
+      containers:
+        - name: dbz-server
+          image: dbz-server:latest
+          imagePullPolicy: Never
+          env:
+            # input (database to follow events from)
+            # https://dbz-server.io/documentation/reference/stable/connectors/postgresql.html#postgresql-connector-properties          
+            - name: DEBEZIUM_SOURCE_CONNECTOR_CLASS
+              value: "io.dbz-server.connector.postgresql.PostgresConnector"
+            - name: DEBEZIUM_SOURCE_DATABASE_USER
+              value: "user"
+            - name: DEBEZIUM_SOURCE_DATABASE_PASSWORD
+              value: "S3cr3T"
+            - name: DEBEZIUM_SOURCE_DATABASE_HOSTNAME
+              value: "dbz-pgsql"
+            - name: DEBEZIUM_SOURCE_DATABASE_PORT
+              value: "5432"
+            - name: DEBEZIUM_SOURCE_DATABASE_DBNAME
+              value: "data"
+            - name: DEBEZIUM_SOURCE_DATABASE_SERVER_NAME
+              value: "data"
+            - name: DEBEZIUM_SOURCE_OFFSET_FLUSH_INTERVAL_MS
+              value: "0"
+            - name: DEBEZIUM_SOURCE_OFFSET_STORAGE_FILE_FILENAME
+              value: "data/offsets.dat"
+            - name: DEBEZIUM_SOURCE_PLUGIN_NAME
+              value: "pgoutput"
+            - name: DEBEZIUM_SOURCE_TOMBSTONES_ON_DELETE
+              value: "false"
+            # output (queue and/or store for generated events)
+            # https://dbz-server.io/documentation/reference/stable/operations/dbz-server-server.html#_redis_stream
+            - name: DEBEZIUM_SINK_TYPE
+              value: "redis"
+            - name: DEBEZIUM_SINK_REDIS_ADDRESS
+              value: "dbz-redis:6379"
+            - name: DEBEZIUM_SINK_REDIS_PASSWORD
+              value: "S3cr3T"
+            - name: DEBEZIUM_SINK_REDIS_NULL_KEY
+              value: "NullPrimaryKey"
+          ports:
+            - containerPort: 8080
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: dbz-server
+spec:
+  selector:
+    app: dbz-server
+  ports:
+    - port: 8080
+      targetPort: 8080
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbz-redis
+spec:
+  selector:
+    matchLabels:
+      app: dbz-redis
+  template:
+    metadata:
+      labels:
+        app: dbz-redis
+    spec:
+      containers:
+        - name: dbz-redis
+          image: dbz-redis:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 6379
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: dbz-redis
+spec:
+  selector:
+    app: dbz-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbz-cons
+spec:
+  selector:
+    matchLabels:
+      app: dbz-cons
+  template:
+    metadata:
+      labels:
+        app: dbz-cons
+    spec:
+      containers:
+        - name: dbz-cons
+          image: dbz-cons:latest
+          imagePullPolicy: Never
+          env:
+            - name: REDIS_PASSWORD
+              value: "S3cr3T"
+            - name: REDIS_HOST
+              value: "dbz-redis"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_DB
+              value: "0"
