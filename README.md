@@ -1,5 +1,5 @@
-**A few toy setups, imagined, built or encountered across the years.** Mostly for demos
-or proofs of concepts. _Nothing to use in production._
+**A few toy setups, imagined, built or encountered across the years.** Mostly for
+self-learning, demos and/or proofs of concepts. _Nothing to use in production._
 
 | Stack | Orchestration |
 | :-- | :-: |
@@ -11,4 +11,4 @@ or proofs of concepts. _Nothing to use in production._
 | [`sFTP` + `Argo` + `TiDB`](sftp-argo-tidb) | :construction: |
 
 This list -and underlying content- is in constant evolution, please be patient if you
-encounter any broken links.
+encounter any broken links. _Built when time allows._
