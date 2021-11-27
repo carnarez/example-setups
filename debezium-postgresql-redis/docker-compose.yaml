@@ -2,6 +2,40 @@ version: "3.7"
 
 services:
 
+  producer:
+    build:
+      context: producer
+      dockerfile: Dockerfile
+    container_name: dbz-prod
+    depends_on:
+      - source
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=S3cr3T
+      - POSTGRES_HOST=source
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=data
+    image: dbz-prod
+    networks:
+      - dbznet
+    restart: unless-stopped
+
+  source:
+    build:
+      context: debezium-source
+      dockerfile: Dockerfile
+    container_name: dbz-pgsql
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=S3cr3T
+      - POSTGRES_DB=data
+    image: dbz-pgsql
+    networks:
+      - dbznet
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+
   debezium:
     build:
       context: debezium-server
@@ -37,22 +71,6 @@ services:
       - 8080:8080
     restart: unless-stopped
 
-  source:
-    build:
-      context: debezium-source
-      dockerfile: Dockerfile
-    container_name: dbz-pgsql
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=S3cr3T
-      - POSTGRES_DB=data
-    image: dbz-pgsql
-    networks:
-      - dbznet
-    ports:
-      - 5432:5432
-    restart: unless-stopped
-
   sink:
     build:
       context: debezium-sink
@@ -63,24 +81,6 @@ services:
       - dbznet
     ports:
       - 6379:6379
-    restart: unless-stopped
-
-  producer:
-    build:
-      context: producer
-      dockerfile: Dockerfile
-    container_name: dbz-prod
-    depends_on:
-      - source
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=S3cr3T
-      - POSTGRES_HOST=source
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=data
-    image: dbz-prod
-    networks:
-      - dbznet
     restart: unless-stopped
 
   consumer:
