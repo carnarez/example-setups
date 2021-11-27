@@ -1,4 +1,4 @@
-**[`Debezium`](https://debezium.io/), [`PostgreSQL`](https://www.postgresql.org/) &
+**[`PostgreSQL`](https://www.postgresql.org/), [`Debezium`](https://debezium.io/) &
 [`Redis Streams`](https://redis.io/topics/streams-intro) playground**, following the
 worklfow:
 
